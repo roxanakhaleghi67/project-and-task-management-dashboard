@@ -1,0 +1,4 @@
+Activity,PV,EV,AC,Planned %,Actual %
+Discovery,15000,15000,16000,100,100
+Implementation,60000,51000,57000,100,85
+Validation,25000,19000,21000,100,76
