@@ -1,5 +1,7 @@
 # Project Performance Dashboard
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![Streamlit](https://img.shields.io/badge/Streamlit-1.39-FF4B4B)
+
 A Python and Streamlit prototype for reviewing project progress and cost data from CSV or Excel
 files. It brings earned value indicators, activity comparisons, cumulative progress curves and a
 downloadable report into one interface.
