@@ -30,10 +30,10 @@ These commands point to the actual entry file. Installation and the complete UI 
 
 For the first trial, upload **both** sample files:
 
-1. Project input: [examples/project_sample.csv](examples/project_sample.csv)
-2. Daily input: [examples/daily_progress_sample.csv](examples/daily_progress_sample.csv)
+1. Project input: `pm msp output.xlsx` (in the repository root)
+2. Daily input: `daily progress.xlsx` (in the repository root)
 
-The current project-only upload path has a known error; use both files until that path is fixed. See [ROADMAP.md](ROADMAP.md).
+The current project-only upload path has a known error; use both files until that path is fixed.
 
 ## Input format
 
@@ -59,7 +59,7 @@ Daily file:
 
 Column names must match exactly. The supplied daily example contains one project-level series with one row per date. Multi-series daily aggregation is not implemented in the current chart.
 
-Use the same currency or budget unit for all monetary values. The example data is entirely synthetic. See [the sample data notes](examples/README.md).
+Use the same currency or budget unit for all monetary values. The sample data shipped with the repository is entirely synthetic.
 
 ## Sample arithmetic
 
@@ -94,6 +94,6 @@ The current implementation lives in [PM3.py](PM3.py). It uses pandas/NumPy for c
 
 The next steps are input validation, the project-only upload fix, explicit budget definitions, and tests for the core calculations. The existing Dockerfile is empty; a working container setup is not currently provided.
 
-See [ROADMAP.md](ROADMAP.md) for concrete completion criteria.
+Completion criteria: every upload path works from a clean environment, the indicator formulas have unit tests, and the container image starts the dashboard.
 
 Built by [Roxana Khaleghi](https://github.com/roxanakhaleghi67).
