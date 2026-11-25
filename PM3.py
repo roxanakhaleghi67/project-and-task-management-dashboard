@@ -55,7 +55,23 @@ if df is None:
 else:
     # پاکسازی و نوع‌دهی
     df.columns = df.columns.str.strip()
+
+    # اعتبارسنجی ستون‌های لازم
+    REQUIRED_COLUMNS = ["Activity", "PV", "EV", "AC", "Planned %", "Actual %"]
+    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+    if missing:
+        st.error(
+            "❌ ستون‌های لازم پیدا نشد: "
+            + "، ".join(missing)
+            + "  |  موجود: " + "، ".join(map(str, df.columns))
+        )
+        st.stop()
+
     safe_numeric(df, ["PV","EV","AC","Planned %","Actual %"])
+    df = df.dropna(subset=["PV", "EV", "AC"])
+    if df.empty:
+        st.error("❌ داده‌ای برای تحلیل باقی نماند.")
+        st.stop()
 
     # محاسبه شاخص کل پروژه
     total_PV = df["PV"].sum()
@@ -183,20 +199,57 @@ else:
     for a in advices:
         st.markdown(f"- {a}")
 
+    # ================== خروجی گزارش (Excel / PDF) ==================
+    st.subheader("⬇️ خروجی گزارش")
+    from io import BytesIO
+
+    summary_df = pd.DataFrame({
+        "Metric": ["Progress %", "SPI", "CPI", "SV", "CV", "EAC", "ETC", "VAC"],
+        "Value": [project_progress, project_SPI, project_CPI, SV, CV, EAC, ETC, VAC],
+    })
+
+    excel_buf = BytesIO()
+    with pd.ExcelWriter(excel_buf, engine="openpyxl") as writer:
+        summary_df.to_excel(writer, index=False, sheet_name="Summary")
+        df.to_excel(writer, index=False, sheet_name="Tasks")
+    st.download_button("Download Excel", data=excel_buf.getvalue(),
+                       file_name="project_report.xlsx",
+                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas as _pdf_canvas
+        pdf_buf = BytesIO()
+        pdf = _pdf_canvas.Canvas(pdf_buf, pagesize=A4)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(50, 800, "Project Performance Report")
+        pdf.setFont("Helvetica", 10)
+        y = 770
+        for k, v in summary_df.itertuples(index=False):
+            try:
+                txt = f"{k}: {round(float(v), 3)}"
+            except (TypeError, ValueError):
+                txt = f"{k}: {v}"
+            pdf.drawString(50, y, txt)
+            y -= 16
+        pdf.showPage()
+        pdf.save()
+        st.download_button("Download PDF", data=pdf_buf.getvalue(),
+                           file_name="project_report.pdf", mime="application/pdf")
+    except Exception as exc:  # noqa: BLE001 - reportlab is optional
+        st.caption(f"PDF export unavailable: {exc}")
+
 # S-Curve handling
 if df_daily is None and df is not None:
-    # ساخت دادهٔ نمونه روزانه (جمع تجمعی) در صورت نبود فایل روزانه
-    if not df_daily["Planned_EV"].is_monotonic_increasing:
-        try:
-            df_daily = pd.DataFrame({
-                "Date": pd.date_range("2025-09-01", periods=len(df)),
-                "Planned_EV": df["PV"].cumsum().fillna(method="ffill"),
-                "Actual_EV": df["EV"].cumsum().fillna(method="ffill")
-            })
-        except Exception:
-            df_daily = None
-    else:
-        pass
+    # ساخت دادهٔ روزانه نمونه (جمع تجمعی) از روی دادهٔ پروژه
+    try:
+        df_daily = pd.DataFrame({
+            "Date": pd.date_range("2025-09-01", periods=len(df)),
+            "Planned_EV": df["PV"].cumsum(),
+            "Actual_EV": df["EV"].cumsum(),
+        })
+    except Exception:
+        df_daily = None
 
 if df_daily is not None:
     df_daily.columns = df_daily.columns.str.strip()

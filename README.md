@@ -1,18 +1,24 @@
 # Project Performance Dashboard
 
-A Python and Streamlit prototype for reviewing project progress and cost data from CSV or Excel files. It brings earned value indicators, activity comparisons, and cumulative progress curves into one interface.
+A Python and Streamlit prototype for reviewing project progress and cost data from CSV or Excel
+files. It brings earned value indicators, activity comparisons, cumulative progress curves and a
+downloadable report into one interface.
 
-**Status:** application prototype. Input validation and error handling are still being improved. A hosted demo is not currently linked.
+**Status:** working prototype. Input validation, the project-only upload path and Excel/PDF export
+are implemented. Automated tests and a hosted demo are still missing.
 
 ## What it does
 
 - Reads project and daily progress data from CSV/XLSX uploads.
+- Validates the required columns and shows a clear message when one is missing.
 - Displays planned value (PV), earned value (EV), and actual cost (AC).
-- Calculates CPI, SPI, schedule variance, and cost variance.
+- Calculates CPI, SPI, schedule variance, cost variance, EAC, ETC and VAC.
 - Compares planned and actual activity progress with Plotly charts.
-- Displays a cumulative progress curve from daily data.
+- Displays a cumulative progress curve from daily data, or a synthetic one from the project file.
+- Exports the indicators and the task table as **Excel** and a one-page **PDF**.
 
-The interface is currently in Persian. English descriptions below explain the file format and implementation.
+The interface is currently in Persian. English descriptions below explain the file format and
+implementation.
 
 ## Run locally
 
@@ -26,14 +32,13 @@ python -m venv .venv
 
 On macOS/Linux, replace `.\.venv\Scripts\python.exe` with `.venv/bin/python`.
 
-These commands point to the actual entry file. Installation and the complete UI flow have not yet been verified in a fresh environment.
-
 For the first trial, upload **both** sample files:
 
-1. Project input: `pm msp output.xlsx` (in the repository root)
-2. Daily input: `daily progress.xlsx` (in the repository root)
+1. Project input: [examples/project_sample.csv](examples/project_sample.csv)
+2. Daily input: [examples/daily_progress_sample.csv](examples/daily_progress_sample.csv)
 
-The current project-only upload path has a known error; use both files until that path is fixed.
+The project file alone is also enough now: the app shows the indicators and builds a synthetic
+S-curve from it.
 
 ## Input format
 
@@ -57,9 +62,9 @@ Daily file:
 | `Planned_EV` | Cumulative planned value |
 | `Actual_EV` | Cumulative earned value, not actual cost |
 
-Column names must match exactly. The supplied daily example contains one project-level series with one row per date. Multi-series daily aggregation is not implemented in the current chart.
-
-Use the same currency or budget unit for all monetary values. The sample data shipped with the repository is entirely synthetic.
+Column names must match exactly (surrounding spaces are stripped). Use the same currency or budget
+unit for all monetary values. The example data is entirely synthetic; see
+[the sample data notes](examples/README.md).
 
 ## Sample arithmetic
 
@@ -75,25 +80,28 @@ For the supplied project file:
 | SV = EV − PV | −15,000 |
 | CV = EV − AC | −9,000 |
 
-These are checks on the sample inputs, not results from a completed UI test. The prototype currently derives BAC from total PV and labels EV/PV as progress. Those assumptions need to be made explicit before using arbitrary reporting snapshots.
+These are checks on the sample inputs. The prototype derives BAC from total PV and labels EV/PV as
+progress; state those assumptions yourself before using arbitrary reporting snapshots.
 
 ## Implementation
 
 ```mermaid
 flowchart LR
     A[CSV or Excel] --> B[pandas parsing]
-    B --> C[Project indicators]
+    B --> V[Column validation]
+    V --> C[Project indicators]
     B --> D[Activity and daily charts]
     C --> E[Streamlit interface]
     D --> E
+    C --> F[Excel / PDF export]
 ```
 
-The current implementation lives in [PM3.py](PM3.py). It uses pandas/NumPy for calculations and Plotly for charts.
+The implementation lives in [PM3.py](PM3.py). It uses pandas/NumPy for calculations, Plotly for
+charts, openpyxl for the Excel export and reportlab for the PDF.
 
 ## Development priorities
 
-The next steps are input validation, the project-only upload fix, explicit budget definitions, and tests for the core calculations. The existing Dockerfile is empty; a working container setup is not currently provided.
-
-Completion criteria: every upload path works from a clean environment, the indicator formulas have unit tests, and the container image starts the dashboard.
+Add tests for the core calculations, make the budget assumptions configurable, and publish a hosted
+demo. See [ROADMAP.md](ROADMAP.md) for completion criteria.
 
 Built by [Roxana Khaleghi](https://github.com/roxanakhaleghi67).
